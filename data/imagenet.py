@@ -58,7 +58,7 @@ class ImageNet(Dataset):
             img = self.transform(img)
         
         label_one_hot = one_hot(class_label, self.class_num)
-        
+
         return img, label_one_hot
 
 
