@@ -9,6 +9,8 @@ import sys
 import torch
 import cv2
 
+from data.config import imagenet_config
+
 def one_hot(label, class_num):
     """返回label的one_hot编码
     Args:
@@ -18,6 +20,7 @@ def one_hot(label, class_num):
 
     one_hot_encoding = torch.zeros(class_num)
     one_hot_encoding[label] = 1
+    one_hot_encoding = one_hot_encoding.long()
 
     return one_hot_encoding
 
@@ -48,18 +51,18 @@ class ImageNet(Dataset):
         self.samples = self._get_samples() # TODO
 
 
-    def __getitem__(self, index): # TODO
+    def __getitem__(self, index):
         image_path = self.samples[index][0]
         class_label = self.samples[index][1]
 
         img = Image.open(image_path)
+        img = img.convert('RGB')
 
         if self.transform:
             img = self.transform(img)
-        
-        label_one_hot = one_hot(class_label, self.class_num)
-
-        return img, label_one_hot
+            
+        label = torch.tensor([class_label])
+        return img, label
 
 
     def __len__(self): # TODO
@@ -103,13 +106,14 @@ class ImageNet(Dataset):
 
 
 if __name__ == "__main__":
-    root = "/home/mxq/Project/data/ImageNet/train"
+    root = "/home/apple/data/MXQ/imagenet/train"
 
     dataset = ImageNet(root, 
                     transforms.Compose([
-                        transforms.RandomResizedCrop(224),
+                        transforms.Resize([224, 224]),
                         transforms.RandomHorizontalFlip(),
                         transforms.ToTensor(),
+                        transforms.Normalize(mean=imagenet_config['mean'], std=imagenet_config['std']),
                     ]
                     ))
 
@@ -117,13 +121,16 @@ if __name__ == "__main__":
         dataset,
         batch_size=1,
         shuffle=True,
-        num_workers=1,
+        # num_workers=1,
         pin_memory=True
         )
 
     batch_iterator = iter(dataloader)
     img, label = next(batch_iterator)
-    
+    img = img[0, :, :, :]
+    img = img.permute(1 , 2, 0)
+    cv2.imshow("win", img.numpy()[:, :, (2, 1, 0)])
+    cv2.waitKey(0)
     print(np.shape(img))
-    print(label)
+    print(np.shape(label))
     pass
