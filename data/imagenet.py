@@ -8,6 +8,7 @@ import os
 import sys
 import torch
 import cv2
+import time
 
 from data.config import imagenet_config
 
@@ -57,10 +58,10 @@ class ImageNet(Dataset):
 
         img = Image.open(image_path)
         img = img.convert('RGB')
-
+     
         if self.transform:
             img = self.transform(img)
-            
+
         label = torch.tensor([class_label])
         return img, label
 

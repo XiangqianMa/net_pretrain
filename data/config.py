@@ -1,14 +1,20 @@
-IMAGENET_ROOT = "/media/lab3/D78F4730A17C1FD2/mxq/datasets/imageNet/ILSVRC2015/Data/CLS-LOC/train"
+IMAGENET_ROOT = "/home/apple/data/MXQ/imagenet/ILSVRC2015_CLS-LOC/ILSVRC2015/Data/CLS-LOC/train"
+IMAGENET_VAL_ROOT = "/home/apple/data/MXQ/imagenet/ILSVRC2015_CLS-LOC/ILSVRC2015/Data/CLS-LOC/val"
 
 imagenet_config = {
-    'num_classes': 1000,
-    'lr_init': 1e-2,
-    'lr_step': [40000, 120000, 160000, 180000],
+    'num_classes': 2,
+    'lr_init': 0.045,
+    'lr_step': [140000, 280000, 420000, 560000],
     'wp_lr': 1e-3,
-    'wp_step': 1000,
+    'wp_step': 100,
     'mean': [0.485, 0.456, 0.406],
     'std': [0.229, 0.224, 0.225],
-    'batch_size': 64,
+    'batch_size': 32,
     'max_iteration': 600000,
-    'save_interval': 5000,
+    'save_interval': 10000,
+}
+
+image_val_config = {
+    'num_classes': 1000, 
+    'batch_size': 32,
 }

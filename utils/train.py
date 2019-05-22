@@ -26,18 +26,21 @@ train_set = parser.add_mutually_exclusive_group()
 parser.add_argument('--dataset', default='imagenet', help='Dataset name.')
 parser.add_argument('--dataset_root', default=IMAGENET_ROOT, help='Dataset root directory path')
 parser.add_argument('--model', default='mobilenet_bn', help='The model to be pretrained.')
-parser.add_argument('--resume', default='weights/mobilenet_imagenet_55000.pth', type=str, help='Checkpoint state_dict file to resume training from')
-parser.add_argument('--start_iter', default=55001, type=int, help='Resume training at this iter')
+parser.add_argument('--resume', default=0, type=str, help='Checkpoint state_dict file to resume training from')
+parser.add_argument('--start_iter', default=0, type=int, help='Resume training at this iter')
 parser.add_argument('--num_workers', default=4, type=int, help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool, help='Use CUDA to train model')
-parser.add_argument('--multi_cuda', default=True, type=str2bool, help='Use multi gpus.')
+parser.add_argument('--multi_cuda', default=False, type=str2bool, help='Use multi gpus.')
 parser.add_argument('--momentum', default=0.9, type=float, help='Momentum value for optim')
-parser.add_argument('--weight_decay', default=5e-4, type=float, help='Weight decay for SGD')
+parser.add_argument('--weight_decay', default=4e-5, type=float, help='Weight decay for SGD')
 parser.add_argument('--gamma', default=0.1, type=float, help='Gamma update for SGD')
 parser.add_argument('--visdom', default=False, type=str2bool, help='Use visdom for loss visualization')
 parser.add_argument('--save_folder', default='weights/', help='Directory for saving checkpoint models')
 
 args = parser.parse_args()
+
+if not args.multi_cuda:
+    os.environ['CUDA_VISIBLE_DEVICES'] = "1"
 
 if torch.cuda.is_available():
     if args.cuda:
@@ -100,6 +103,8 @@ def train():
     optimizer = optim.SGD(net.parameters(), lr=imagenet_config['lr_init'], momentum=args.momentum,
                             weight_decay=args.weight_decay)
     criterion = classification_loss()
+    if args.cuda:
+        criterion = criterion.cuda()
 
     max_iteration = imagenet_config['max_iteration']
     
@@ -120,7 +125,7 @@ def train():
         else:
             images = Variable(images)
             targets = Variable(targets)
-            
+
         # 调整学习率，采用warming_up机制
         if iteration == 0:
             print('-------------l_r is {}.-----------------------\n'.format(imagenet_config['wp_lr']))
