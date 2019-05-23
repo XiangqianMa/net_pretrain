@@ -108,9 +108,9 @@ class MobileNetV2(nn.Module):
     def __init__(self, num_classes=1000, width_mult=1.0):
         super(MobileNetV2, self).__init__()
         block = InvertedResidual
-        extra_block = ExtraLyers
         input_channel = 32
         last_channel = 1280
+        input_size = 300
 
         self.inverted_residual_setting = [
             # t, c, n, s
@@ -123,21 +123,6 @@ class MobileNetV2(nn.Module):
             [6, 160, 3, 2],
             [6, 320, 1, 1],
         ]
-
-        self.extra_layers_setting = [
-            # c, s, e_r
-            # c:输出通道, s:stride, e_r:通道扩展比例
-            [512, 2, 0.2],
-            [256, 2, 0.25],
-            [256, 2, 0.5],
-            [64, 2, 0.25],
-        ]
-
-        # 需要输出的中间特征的通道大小
-        self.out_channels_setting = [576, 1280, 512, 256, 256, 64]
-        # 需要输出的中间特征的序号，以整个网络的第一模块为0
-        self.out_features_index_base = {14:0, 18:0}
-        self.out_features_index_extras = [19, 20, 21, 22]
         
         # 第一层
         input_channel = int(input_channel * width_mult)

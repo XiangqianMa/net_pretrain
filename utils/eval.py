@@ -12,10 +12,11 @@ from torch.autograd import Variable
 
 sys.path.append('.')
 from models.mobilenet_bn import mobilenet_v2
-from data import ImageNet
+from data import ImageNetVal
 from data import config
 from data import IMAGENET_VAL_ROOT
 from data import image_val_config
+from data import IMAGENET_VAL_ANN_ROOT
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -24,9 +25,8 @@ parser = argparse.ArgumentParser(description='Evaluate model.')
 train_set = parser.add_mutually_exclusive_group()
 
 parser.add_argument('--dataset', default='imagenet', help='Dataset name.')
-parser.add_argument('--val_dataset_root', default=IMAGENET_VAL_ROOT, help='Val dataset root directory path')
 parser.add_argument('--model', default='mobilenet_bn', help='The model to be pretrained.')
-parser.add_argument('--checkpoint', default='weights/mobilenet_imagenet_290000.pth', type=str, help='Checkpoint state_dict file.')
+parser.add_argument('--checkpoint', default='weights/mobilenet_imagenet_590000.pth', type=str, help='Checkpoint state_dict file.')
 parser.add_argument('--num_workers', default=4, type=int, help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool, help='Use CUDA to train model')
 parser.add_argument('--multi_cuda', default=True, type=str2bool, help='Use multi gpus.')
@@ -45,11 +45,11 @@ if torch.cuda.is_available():
         torch.set_default_tensor_type('torch.FloatTensor')
 
 def eval():
-    val_dataset_root = args.val_dataset_root
     if args.dataset == 'imagenet':
-        dataset = ImageNet(
-            val_dataset_root,
-            transforms.Compose(
+        val_dataset = ImageNetVal(
+            dataset_val_root=IMAGENET_VAL_ROOT,
+            label_path=IMAGENET_VAL_ANN_ROOT,
+            transforms=transforms.Compose(
                 [
                     transforms.Resize([300, 300]),
                     transforms.RandomHorizontalFlip(),
@@ -59,7 +59,7 @@ def eval():
         )
     
     dataloader = torch.utils.data.DataLoader(
-                        dataset,
+                        val_dataset,
                         batch_size=image_val_config['batch_size'],
                         shuffle=True,
                         num_workers=args.num_workers,
@@ -104,18 +104,20 @@ def eval():
             targets = Variable(targets_batch)
 
         predictions = net_gpus(images)
-        predictions = nn.Softmax(predictions)
+        predictions = nn.functional.log_softmax(predictions)
         predictions = torch.argmax(predictions, dim=1)
         targets = targets.squeeze(1)
 
         correct += (predictions == targets).sum().float()
         total += len(targets)
     
+    print("{} images.".format(total.cpu().item()))
     accuracy = (correct / total).cpu().item()
 
     return accuracy
 
 if __name__ == "__main__":
+    torch.multiprocessing.set_start_method('spawn')
     accuracy = eval()
     print("Accuracy: %.4f" % accuracy)
     pass
